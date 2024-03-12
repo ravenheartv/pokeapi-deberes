@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adivina el Pokémon</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+
+        #pokemonContainer {
+            text-align: center;
+        }
+
+        .pokemonImage {
+            width: 300px; /* Ajusta el ancho según sea necesario */
+            height: 300px; /* Ajusta la altura según sea necesario */
+            background-size: contain;
+            background-repeat: no-repeat;
+            overflow: hidden; /* Ocultar partes de la imagen que exceden el contenedor */
+            filter: brightness(0%); /* Aplicar filtro de brillo al 0% para ocultar la imagen */
+            transition: filter 2s; /* Animación de transición de 1 segundo para cambiar el filtro de brillo */
+        }
+
+        #puntosContainer {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div id="pokemonContainer">
+        <h1>Adivina el Pokémon</h1>
+        <div id="pokemonImage" class="pokemonImage"></div>
+        <div id="pokemonOptions"></div>
+        <div id="puntosContainer">Puntos: <span id="puntos">0</span></div>
+        <button onclick="obtenerPokemonAleatorio()">Nuevo Pokémon</button>
+    </div>
+
+    <script>
+        let puntos = 0;
+        let pokemonSeleccionado = '';
+
+        function obtenerPokemonAleatorio() {
+            const imagenPokemonContainer = document.getElementById('pokemonImage');
+            imagenPokemonContainer.style.filter = 'brightness(0%)'; // Aplicar filtro de brillo al 0% para ocultar la imagen
+            const pokemonId = Math.floor(Math.random() * 807) + 1;
+            fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Error de solicitud: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    mostrarPokemon(data);
+                })
+                .catch(error => {
+                    console.error('Error al obtener el Pokémon:', error);
+                });
+        }
+
+        function mostrarPokemon(pokemon) {
+            const imagenPokemonContainer = document.getElementById('pokemonImage');
+            imagenPokemonContainer.style.backgroundImage = `url('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.id}.png')`; // Imagen del Pokémon en color
+            pokemonSeleccionado = pokemon.name;
+
+            const opcionesPokemon = document.getElementById('pokemonOptions');
+            opcionesPokemon.innerHTML = '';
+            const nombresPokemon = [];
+
+            nombresPokemon.push(pokemon.name);
+
+            for (let i = 0; i < 3; i++) {
+                const randomPokemonId = Math.floor(Math.random() * 807) + 1;
+                fetch(`https://pokeapi.co/api/v2/pokemon-species/${randomPokemonId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        nombresPokemon.push(data.name);
+                        if (nombresPokemon.length === 4) {
+                            nombresPokemon.sort(() => Math.random() - 0.5);
+                            nombresPokemon.forEach(nombre => {
+                                opcionesPokemon.innerHTML += `<button onclick="verificarRespuesta('${nombre}')">${nombre}</button>`;
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error al obtener el Pokémon:', error);
+                    });
+            }
+        }
+
+        function verificarRespuesta(nombre) {
+            const imagenPokemonContainer = document.getElementById('pokemonImage');
+            if (nombre === pokemonSeleccionado) {
+                puntos++;
+                document.getElementById('puntos').textContent = puntos;
+            } else {
+                puntos--;
+                document.getElementById('puntos').textContent = puntos;
+            }
+            imagenPokemonContainer.style.filter = 'none'; // Eliminar el filtro de brillo para mostrar la imagen en color
+            setTimeout(() => {
+                imagenPokemonContainer.style.filter = 'brightness(0%)'; // Aplicar filtro de brillo al 0% para ocultar la imagen después de 1 segundo
+                obtenerPokemonAleatorio(); // Obtener un nuevo Pokémon después de responder
+            }, 1000);
+        }
+
+        window.onload = obtenerPokemonAleatorio;
+    </script>
+</body>
+</html>
+
